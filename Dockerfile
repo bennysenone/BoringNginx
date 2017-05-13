@@ -59,7 +59,8 @@ RUN wget "https://nginx.org/download/nginx-$NGXVERSION.tar.gz.asc" && \
     out=$(gpg --status-fd 1 --verify "nginx-$NGXVERSION.tar.gz.asc" 2>/dev/null) && \
     if echo "$out" | grep -qs "\[GNUPG:\] GOODSIG" && echo "$out" | grep -qs "\[GNUPG:\] VALIDSIG"; then echo "Good signature on nginx source file."; else echo "GPG VERIFICATION OF SOURCE CODE FAILED!" && echo "EXITING!" && exit 100; fi
 
-# Download and build PageSpeed & PageSpeed Optimization Library (PSOL)
+# Download PageSpeed & PageSpeed Optimization Library (PSOL)
+##
 ## On Alpine we cannot just grab these prebuilt binaries as they expect us to be
 ## running a system with glibc, so I have temporarily disabled the PageSpeed module for now.
 ## To re-enable, make sure to re-add the following line:
@@ -97,8 +98,8 @@ RUN tar -xzvf nginx-$NGXVERSION.tar.gz && \
 WORKDIR "/root/nginx-$NGXVERSION/"
 
 # Configure Nginx
-## Config options mostly stolen from the Red Hat package of nginx for Fedora 25.
 ##
+## Config options mostly stolen from the Red Hat package of nginx for Fedora 25.
 ## cc-opt tweaked to use -fstack-protector-all, and -fPIE added to build position-independent.
 ## Removed any of the modules that the Fedora team was building with "=dynamic" as they stop us being able
 ## to build with -fPIE and require the less-hardened -fPIC option instead. (https://gcc.gnu.org/onlinedocs/gcc/Code-Gen-Options.html)
@@ -124,7 +125,7 @@ RUN ./configure \
         --http-fastcgi-temp-path=/var/lib/nginx/tmp/fastcgi \
         --http-uwsgi-temp-path=/var/lib/nginx/tmp/uwsgi \
         --http-scgi-temp-path=/var/lib/nginx/tmp/scgi \
-        --pid-path=/run/nginx.pid \
+        --pid-path=/var/run/nginx.pid \
         --lock-path=/run/lock/subsys/nginx \
         --user=nginx \
         --group=nginx \
@@ -168,8 +169,8 @@ RUN chown -R nginx /usr/share/nginx && \
     chown -R nginx /var/log/nginx && \
     mkdir -p /var/lib/nginx/tmp && \
     chown -R nginx /var/lib/nginx && \
-    touch /run/nginx.pid && \
-    chown -R nginx /run/nginx.pid
+    touch /var/run/nginx.pid && \
+    chown nginx /var/run/nginx.pid
 
 # Configure nginx to listen on 8080 instead of 80 (we can't bind to <1024 as non-root)
 RUN perl -pi -e 's,80;,8080;,' /etc/nginx/nginx.conf
