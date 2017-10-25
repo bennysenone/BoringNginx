@@ -12,7 +12,7 @@ FROM alpine
 MAINTAINER Alex Haydock <alex@alexhaydock.co.uk>
 
 # Nginx Version (See: https://nginx.org/en/CHANGES)
-ENV NGXVERSION 1.13.0
+ENV NGXVERSION 1.12.2
 ENV NGXSIGKEY B0F4253373F8F6F510D42178520A9993A1C052F8
 
 # PageSpeed Version (See: https://modpagespeed.com/doc/release_notes)
@@ -175,7 +175,7 @@ RUN chown -R nginx /usr/share/nginx && \
 # Configure nginx to listen on 8080 instead of 80 (we can't bind to <1024 as non-root)
 RUN perl -pi -e 's,80;,8080;,' /etc/nginx/nginx.conf
 
-# Remove some packages (Doesn't save space because of container's CoW design, but might add a bit of security)
+# Remove some packages (Doesn't save space, but might add a bit of security to not have compilers and build tools in our running environment)
 RUN apk del \
       cmake \
       g++ \
