@@ -16,7 +16,7 @@ ENV NGXVERSION 1.12.2
 ENV NGXSIGKEY B0F4253373F8F6F510D42178520A9993A1C052F8
 
 # PageSpeed Version (See: https://modpagespeed.com/doc/release_notes)
-ENV PSPDVER latest-beta
+ENV PSPDVER latest-stable
 
 # Build as root (we drop privileges later when actually running the container)
 USER root
