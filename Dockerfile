@@ -57,6 +57,7 @@ ARG CONFIG="\
     --with-cc-opt=-I'/usr/src/boringssl/.openssl/include/' \
     --add-module=/usr/src/modules/ngx_headers_more \
     --add-module=/usr/src/modules/ngx_subs_filter \
+    --add-module=/usr/src/modules/ngx_brotli \
 "
 
 RUN set -xe \
@@ -85,8 +86,11 @@ RUN set -xe \
     && mkdir -p /usr/src/modules \
     && git clone --depth 1 https://github.com/openresty/headers-more-nginx-module.git /usr/src/modules/ngx_headers_more \
     && git clone --depth 1 https://github.com/yaoweibin/ngx_http_substitutions_filter_module.git /usr/src/modules/ngx_subs_filter \
+    && git clone --depth 1 https://github.com/google/ngx_brotli.git /usr/src/modules/ngx_brotli \
+    && cd /usr/src/modules/ngx_brotli && git submodule update --init \
     \
 # Download and prepare Nginx
+    && cd /usr/src \
     && addgroup -S nginx \
     && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
     && apk add --no-cache --virtual .build-deps \
