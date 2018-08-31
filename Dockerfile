@@ -158,12 +158,18 @@ RUN mv -fv /usr/src/nginx/ /tmp/buildsource/nginx/
 RUN mv -fv /usr/src/modules/ /tmp/buildsource/modules/
 RUN mv -fv /usr/src/boringssl/ /tmp/buildsource/boringssl/
 
+# Download GeoIP Database
+RUN apk add --no-cache geoip wget
+RUN echo "Downloading GeoIP database..."
+RUN /etc/periodic/monthly/geoip
+
 
 # --- Runtime Container --- #
 FROM alpine:3.8
 LABEL maintainer "Alex Haydock <alex@alexhaydock.co.uk>"
 
 COPY --from=builder /tmp/buildsource /usr/src
+COPY --from=builder /usr/share/GeoIP/GeoIPv6.dat /usr/share/GeoIP/GeoIPv6.dat
 
 RUN set -xe \
     \
