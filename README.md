@@ -24,7 +24,7 @@ docker run -d -p 80:80 -p 443:443 -v /path/to/nginx.conf:/etc/nginx.conf:ro --na
 ### Build This Container Locally
 If you have a regular install of Docker on an `x64_64` machine, you can build this container like so:
 ```
-docker build -t nginx-boringssl-latest https://github.com/alexhaydock/BoringNginx.git
+docker build --rm -t nginx-boringssl-latest https://github.com/alexhaydock/BoringNginx.git
 ```
 
 You can now use the run commands from above, simply substituting `alexhaydock/nginx-boringssl-latest` with `nginx-boringssl-latest`.
@@ -39,11 +39,9 @@ Podman is Red Hat's answer to Docker, and you may wish to use this particularly 
 
 You may also wish to use this if you are using Silverblue or another of Red Hat's atomic distributions which ship Podman natively.
 
-Clone this repo and build with:
+Build with:
 ```
-git clone https://github.com/alexhaydock/BoringNginx.git
-cd BoringNginx
-sudo podman build -t nginx-boringssl-latest .
+sudo podman build --rm -t nginx-boringssl-latest github.com/alexhaydock/BoringNginx
 ```
 
 You can now run the container using the same run commands as above, simply substituting `docker` with `podman`, and `alexhaydock/nginx-boringssl-latest` with `nginx-boringssl-latest`.
