@@ -164,18 +164,12 @@ RUN mv -fv /usr/src/boringssl/ /tmp/buildsource/boringssl/
 # Backup our NGINX_ID environment variable
 RUN echo "$NGINX_ID" > /tmp/buildsource/nginx_id
 
-# Download GeoIP Database
-RUN apk add --no-cache geoip wget
-RUN echo "Downloading GeoIP database..."
-RUN /etc/periodic/monthly/geoip
-
-
 # --- Runtime Container --- #
 FROM alpine:3.8
 LABEL maintainer "Alex Haydock <alex@alexhaydock.co.uk>"
 
 COPY --from=builder /tmp/buildsource /usr/src
-COPY --from=builder /usr/share/GeoIP/GeoIPv6.dat /usr/share/GeoIP/GeoIPv6.dat
+ADD https://geolite.maxmind.com/download/geoip/database/GeoIPv6.dat.gz /usr/share/GeoIP/GeoIPv6.dat
 
 RUN set -xe \
     \
