@@ -1,6 +1,16 @@
 # Most of the below is based on the Nginx Team's Alpine Dockerfile
 #   https://github.com/nginxinc/docker-nginx/blob/e3e35236b2c77e02266955c875b74bdbceb79c44/mainline/alpine/Dockerfile
 
+
+# --- Maxmind GeoIP DB Download Container --- #
+FROM ubuntu:18.04 as geoip
+LABEL maintainer "Alex Haydock <alex@alexhaydock.co.uk>"
+
+RUN apt-get update && apt-get install geoipupdate -y
+RUN geoipupdate -v
+
+
+# --- Nginx Build Container --- #
 FROM alpine:3.8 as builder
 LABEL maintainer "Alex Haydock <alex@alexhaydock.co.uk>"
 
@@ -43,13 +53,11 @@ ARG CONFIG="\
     --with-http_auth_request_module \
     --with-http_xslt_module=dynamic \
     --with-http_image_filter_module=dynamic \
-    --with-http_geoip_module=dynamic \
     --with-threads \
     --with-stream \
     --with-stream_ssl_module \
     --with-stream_ssl_preread_module \
     --with-stream_realip_module \
-    --with-stream_geoip_module=dynamic \
     --with-http_slice_module \
     --with-mail \
     --with-mail_ssl_module \
@@ -60,6 +68,7 @@ ARG CONFIG="\
     --with-cc-opt=-I'/usr/src/boringssl/.openssl/include/' \
     --add-module=/usr/src/modules/ngx_headers_more \
     --add-module=/usr/src/modules/ngx_subs_filter \
+    --add-module=/usr/src/modules/ngx_http_geoip2_module \
     --add-module=/usr/src/modules/ngx_brotli \
 "
 
@@ -89,6 +98,7 @@ RUN set -xe \
     && mkdir -p /usr/src/modules \
     && git clone --depth 1 https://github.com/openresty/headers-more-nginx-module.git /usr/src/modules/ngx_headers_more \
     && git clone --depth 1 https://github.com/yaoweibin/ngx_http_substitutions_filter_module.git /usr/src/modules/ngx_subs_filter \
+    && git clone --depth 1 https://github.com/leev/ngx_http_geoip2_module.git /usr/src/modules/ngx_http_geoip2_module \
     && git clone --depth 1 https://github.com/google/ngx_brotli.git /usr/src/modules/ngx_brotli \
     && cd /usr/src/modules/ngx_brotli && git submodule update --init \
     \
@@ -107,7 +117,6 @@ RUN set -xe \
         gnupg \
         libxslt-dev \
         gd-dev \
-        geoip-dev \
     && curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
     && curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
     && export GNUPGHOME="$(mktemp -d)" \
@@ -139,9 +148,7 @@ RUN cd /usr/src/nginx \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && mv objs/nginx objs/nginx-debug \
     && mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
-    && mv objs/ngx_http_image_filter_module.so objs/ngx_http_image_filter_module-debug.so \
-    && mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
-    && mv objs/ngx_stream_geoip_module.so objs/ngx_stream_geoip_module-debug.so
+    && mv objs/ngx_http_image_filter_module.so objs/ngx_http_image_filter_module-debug.so
 
 # Build main bits
 RUN cd /usr/src/nginx \
@@ -164,12 +171,14 @@ RUN mv -fv /usr/src/boringssl/ /tmp/buildsource/boringssl/
 # Backup our NGINX_ID environment variable
 RUN echo "$NGINX_ID" > /tmp/buildsource/nginx_id
 
+
 # --- Runtime Container --- #
 FROM alpine:3.8
 LABEL maintainer "Alex Haydock <alex@alexhaydock.co.uk>"
 
 COPY --from=builder /tmp/buildsource /usr/src
-ADD https://geolite.maxmind.com/download/geoip/database/GeoIPv6.dat.gz /usr/share/GeoIP/GeoIPv6.dat
+# See this page for GeoIP info: https://github.com/leev/ngx_http_geoip2_module#example-usage
+COPY --from=geoip /var/lib/GeoIP/GeoLite2-Country.mmdb /var/lib/GeoIP/GeoLite2-Country.mmdb
 
 RUN set -xe \
     \
@@ -194,8 +203,6 @@ RUN set -xe \
     && install -m755 objs/nginx-debug /usr/sbin/nginx-debug \
     && install -m755 objs/ngx_http_xslt_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_xslt_filter_module-debug.so \
     && install -m755 objs/ngx_http_image_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so \
-    && install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/nginx/modules/ngx_http_geoip_module-debug.so \
-    && install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/nginx/modules/ngx_stream_geoip_module-debug.so \
     && ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
     && strip /usr/sbin/nginx* \
     && strip /usr/lib/nginx/modules/*.so \
