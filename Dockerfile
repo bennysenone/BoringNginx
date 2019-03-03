@@ -15,7 +15,7 @@ FROM alpine:3.9 as builder
 LABEL maintainer "Alex Haydock <alex@alexhaydock.co.uk>"
 
 # Nginx Version (See: https://nginx.org/en/CHANGES)
-ENV NGINX_VERSION 1.15.8
+ENV NGINX_VERSION 1.15.9
 ENV NGINX_GPG B0F4253373F8F6F510D42178520A9993A1C052F8
 
 # Nginx User UID/GID
